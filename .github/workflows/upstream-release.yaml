@@ -1,0 +1,135 @@
+name: Detect and build new upstream based release
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Build even though there is no new upstream release."
+        required: true
+        default: false
+        type: boolean
+
+  push:
+    tags: ["*"]
+
+  schedule:
+    # https://crontab.guru/#0_7_*_*_1-5
+    - cron: "0 7 * * 1-5"
+
+# permissions are needed if pushing to ghcr.io
+permissions:
+  packages: write
+  contents: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NEW_BUILD: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_build == 'true' }}
+
+jobs:
+  trigger-from-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/actions/checkout/?tab=readme-ov-file#usage
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # fetch-tags: true # Does not work for some reason, so we we use fetch-depth: 0
+
+      # https://github.com/fut-infrastructure/ig-publisher/settings/variables/actions
+      - name: Pipeline debug
+        if: vars.DEBUG == 'true'
+        run: |
+          echo "Files:"
+          ls -lav
+          echo "Git info:"
+          git status -bv
+          git branch -v
+          echo "Log:"
+          git log --oneline --decorate --graph
+          echo "Tags:"
+          git tag --sort=committerdate
+          echo "SemVer tags:"
+          git tag --sort=committerdate | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}' 
+          echo "Environment variables:"
+          env
+
+      - name: Get the latest upstream release
+        id: upstream
+        run: |
+          # https://docs.github.com/en/rest/releases/releases?#get-the-latest-release
+          upstream_version=$(curl -s https://api.github.com/repos/hapifhir/hapi-fhir/releases/latest \
+            | jq -r '.tag_name' | sed 's/v//g')
+          # https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
+          echo "upstream_version=$upstream_version" >> $GITHUB_OUTPUT
+          echo "Found upstream release: \"$upstream_version\""
+
+      - name: Get the latest local tag
+        id: tag
+        env:
+          name: ${{ env.IMAGE_NAME }}
+        run: |
+          # https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
+          # https://remarkablemark.org/blog/2023/04/15/how-to-grep-for-semver/
+          local_version=$(git tag --sort=committerdate \
+            | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}' \
+            | tail -1 \
+            | sed 's/\\n//g') # Remove any newlines.
+          echo "Latest SemVer tag: $local_version"
+          echo "image_version=$local_version" >> $GITHUB_OUTPUT
+          echo "Found latest local release: \"$local_version\""
+
+      - name: Determine if new build is needed
+        if: steps.upstream.outputs.upstream_version != steps.tag.outputs.local_version
+        run: |
+          echo "Upstream output: ${{ steps.upstream.outputs.upstream_version }}"
+          echo "Local output: ${{ steps.tag.outputs.local_version }}"
+          echo "NEW_BUILD=true" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        if: env.NEW_BUILD == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        if: env.NEW_BUILD == 'true'
+        id: meta # you'll use this in the next step
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+            type=raw,latest
+            type=semver,pattern={{version}},value=${{ steps.upstream.outputs.upstream_version }}
+
+      - name: Build and push
+        if: env.NEW_BUILD == 'true'
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: hapi_fhir_version=${{ steps.upstream.outputs.upstream_version }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+
+      # The tag is created after the build in case the build fails, which
+      # would then prevent the tag from being created.
+      # and the failed build would be retried at each schedule.
+      - name: Create tag for the new upstream release
+        if: steps.upstream.outputs.upstream_version != steps.fut.outputs.fut_version
+        run: |
+          git tag ${{ steps.upstream.outputs.upstream_version }}
+          git push origin ${{ steps.upstream.outputs.upstream_version }}
