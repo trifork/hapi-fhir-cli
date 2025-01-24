@@ -76,7 +76,7 @@ jobs:
             | tail -1 \
             | sed 's/\\n//g') # Remove any newlines.
           echo "Latest SemVer tag: $local_version"
-          echo "image_version=$local_version" >> $GITHUB_OUTPUT
+          echo "local_version=$local_version" >> $GITHUB_OUTPUT
           echo "Found latest local release: \"$local_version\""
 
       - name: Determine if new build is needed
