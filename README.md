@@ -2,13 +2,15 @@
 
 Repo for building daily releases of the HAPI FHIR CLI if a new version is available.
 
-## Inline usage
+## Usage
+
+### Inline
 
 ```bash
 docker run ghcr.io/trifork/hapi-fhir-cli:latest
 ```
 
-## New image usage
+### New image usage
 
 ```dockerfile
 FROM ghcr.io/trifork/hapi-fhir-cli:latest AS Final
