@@ -60,13 +60,13 @@ spec:
             - name: DB_URL
               valueFrom:
                 configMapKeyRef:
-                  name: secret-name
+                  name: config-map-name
                   key: DB_CONN
 
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: secret-name
+                  name: config-map-name
                   key: DB_PORT
 
             - name: DB_NAME
