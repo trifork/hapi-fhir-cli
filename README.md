@@ -26,8 +26,8 @@ For a Docker Compose setup, you can have a `.env`-file with with variables in, a
 ```yaml
 services:
 
-  hapi_fhir_cli_tool:
-    container_name: "HAPI-FHIR-CLI-Tool"
+  hapi_fhir_cli:
+    container_name: "HAPI-FHIR-CLI"
     image: ghcr.io/trifork/hapi-fhir-cli:latest
     depends_on:
       - hapi
