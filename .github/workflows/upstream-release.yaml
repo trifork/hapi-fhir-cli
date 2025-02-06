@@ -129,7 +129,7 @@ jobs:
       # would then prevent the tag from being created.
       # and the failed build would be retried at each schedule.
       - name: Create tag for the new upstream release
-        if: env.NEW_BUILD == 'true'
+        if: steps.upstream.outputs.upstream_version != steps.tag.outputs.local_version
         run: |
           git tag ${{ steps.upstream.outputs.upstream_version }}
           git push origin ${{ steps.upstream.outputs.upstream_version }}
