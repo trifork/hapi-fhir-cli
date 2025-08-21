@@ -1,6 +1,6 @@
 # HAPI FHIR CLI
 
-Repo for building daily releases of the HAPI FHIR CLI if a new version is available.
+Repo for building daily releases of the HAPI FHIR CLI if a new version is available. Do not be fooled by the low commit activity in the repo. Instead, see the tags provided on https://github.com/trifork/hapi-fhir-cli/tags. If you find a missing release or encounter bugs, please do make an issue.
 
 ## Usage
 
