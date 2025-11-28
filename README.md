@@ -33,7 +33,7 @@ ENTRYPOINT ["sh",  "-c", "./hapi-fhir-cli migrate-database -d ${DATABASE_DRIVER}
 This repository only builds the newest version per default, but if you are missing and older version, either create an issue here, or push to your own container registry.
 
 Login to Docker using `docker login` for your container registry of choice.
-For GitHub, get a [Personal Access Token](https://github.com/settings/tokens) with both the scopes `write:packages` abd `read:packages`, and [login in your terminal](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+For GitHub, get a [Personal Access Token](https://github.com/settings/tokens) with both the scopes `write:packages` and `read:packages`, and [login in your terminal](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
 
 Then build a local image, test it, and push it to the repository.
 
