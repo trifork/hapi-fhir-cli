@@ -11,6 +11,11 @@ on:
 
   push:
     tags: ["*"]
+  
+
+  pull_request:
+    branches:
+      - featyre/pipelineUpdate2
 
   schedule:
     # https://crontab.guru/#0_7_*_*_1-5
@@ -94,50 +99,50 @@ jobs:
             echo "NEW_BUILD=true" >> $GITHUB_ENV
           fi
 
-      - name: Login to GHCR
-        if: env.NEW_BUILD == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Login to GHCR
+      #   if: env.NEW_BUILD == 'true'
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker meta
-        if: env.NEW_BUILD == 'true'
-        id: meta # you'll use this in the next step
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 #v5.10.0
-        with:
-          # list of Docker images to use as base name for tags
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # Docker tags based on the following events/attributes
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-            type=raw,latest
-            type=semver,pattern={{version}},value=${{ steps.upstream.outputs.upstream_version }}
+      # - name: Docker meta
+      #   if: env.NEW_BUILD == 'true'
+      #   id: meta # you'll use this in the next step
+      #   uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 #v5.10.0
+      #   with:
+      #     # list of Docker images to use as base name for tags
+      #     images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      #     # Docker tags based on the following events/attributes
+      #     tags: |
+      #       type=schedule
+      #       type=ref,event=branch
+      #       type=ref,event=pr
+      #       type=semver,pattern={{version}}
+      #       type=semver,pattern={{major}}.{{minor}}
+      #       type=semver,pattern={{major}}
+      #       type=sha
+      #       type=raw,latest
+      #       type=semver,pattern={{version}},value=${{ steps.upstream.outputs.upstream_version }}
 
-      - name: Build and push
-        if: env.NEW_BUILD == 'true'
-        id: docker_build
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 #v6.18.0
-        with:
-          context: .
-          build-args: hapi_fhir_version=${{ steps.upstream.outputs.upstream_version }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          annotations: ${{ steps.meta.outputs.annotations }}
+      # - name: Build and push
+      #   if: env.NEW_BUILD == 'true'
+      #   id: docker_build
+      #   uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 #v6.18.0
+      #   with:
+      #     context: .
+      #     build-args: hapi_fhir_version=${{ steps.upstream.outputs.upstream_version }}
+      #     push: ${{ github.event_name != 'pull_request' }}
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     labels: ${{ steps.meta.outputs.labels }}
+      #     annotations: ${{ steps.meta.outputs.annotations }}
 
-      # The tag is created after the build in case the build fails, which
-      # would then prevent the tag from being created.
-      # and the failed build would be retried at each schedule.
-      - name: Create tag for the new upstream release
-        if: steps.upstream.outputs.upstream_version != steps.tag.outputs.local_version
-        run: |
-          git tag ${{ steps.upstream.outputs.upstream_version }}
-          git push origin ${{ steps.upstream.outputs.upstream_version }}
+      # # The tag is created after the build in case the build fails, which
+      # # would then prevent the tag from being created.
+      # # and the failed build would be retried at each schedule.
+      # - name: Create tag for the new upstream release
+      #   if: steps.upstream.outputs.upstream_version != steps.tag.outputs.local_version
+      #   run: |
+      #     git tag ${{ steps.upstream.outputs.upstream_version }}
+      #     git push origin ${{ steps.upstream.outputs.upstream_version }}
