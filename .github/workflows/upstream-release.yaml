@@ -66,13 +66,13 @@ jobs:
           echo "upstream_version=$upstream_version" >> $GITHUB_OUTPUT
           echo "Found upstream release: \"$upstream_version\""
 
+        # https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
+        # https://remarkablemark.org/blog/2023/04/15/how-to-grep-for-semver/
       - name: Get the latest local tag
         id: tag
         env:
           name: ${{ env.IMAGE_NAME }}
         run: |
-          # https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
-          # https://remarkablemark.org/blog/2023/04/15/how-to-grep-for-semver/
           echo "Found these tags: \n $(git tag --sort=committerdate | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}')"
           local_versions=$(git tag --sort=committerdate \
             | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}' \
