@@ -21,7 +21,7 @@ docker run --rm ghcr.io/trifork/hapi-fhir-cli:latest app.jar migrate-database \
 
 ### Docker Compose
 
-For a Docker Compose setup, you can have a `.env`-file with with variables in, and refer them in `command`, as this will substitute them in before the container starts up.
+For a Docker Compose setup, you can have a `.env`-file with variables in, and refer them in `command`, as this will substitute them in before the container starts up.
 
 ```yaml
 services:
