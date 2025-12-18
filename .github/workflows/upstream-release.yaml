@@ -72,20 +72,27 @@ jobs:
         run: |
           # https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
           # https://remarkablemark.org/blog/2023/04/15/how-to-grep-for-semver/
-          local_version=$(git tag --sort=committerdate \
+          echo "Found these tags: \n $(git tag --sort=committerdate | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}')"
+          local_versions=$(git tag --sort=committerdate \
             | grep -Eo '[0-9]{1,}.[0-9]{1,}.[0-9]{1,}' \
-            | tail -1 \
-            | sed 's/\\n//g') # Remove any newlines.
-          echo "Latest SemVer tag: $local_version"
-          echo "local_version=$local_version" >> $GITHUB_OUTPUT
-          echo "Found latest local release: \"$local_version\""
+            | paste -sd,) # Comma separated tags.
+          echo "local_versions=$local_versions" >> $GITHUB_OUTPUT
 
       - name: Determine if new build is needed
-        if: steps.upstream.outputs.upstream_version != steps.tag.outputs.local_version
         run: |
-          echo "Upstream output: ${{ steps.upstream.outputs.upstream_version }}"
-          echo "Local output: ${{ steps.tag.outputs.local_version }}"
-          echo "NEW_BUILD=true" >> $GITHUB_ENV
+          upstream_version="${{ steps.upstream.outputs.upstream_version }}"
+          local_versions="${{ steps.tag.outputs.local_versions }}"
+          echo "Upstream output: $upstream_version"
+          echo "Local output: $local_versions"
+          
+          # Check if upstream version exists in comma-separated local versions
+          if [[ ",$local_versions," == *",$upstream_version,"* ]]; then
+            echo "Version $upstream_version already exists locally - no build needed"
+            echo "NEW_BUILD=false" >> $GITHUB_ENV
+          else
+            echo "Version $upstream_version not found locally - new build needed"
+            echo "NEW_BUILD=true" >> $GITHUB_ENV
+          fi
 
       - name: Login to GHCR
         if: env.NEW_BUILD == 'true'
