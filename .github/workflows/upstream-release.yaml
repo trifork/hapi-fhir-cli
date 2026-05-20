@@ -60,7 +60,8 @@ jobs:
       - name: Get the latest upstream release
         id: upstream
         run: |
-          api_response=$(curl -H 'Cache-Control: no-cache, no-store' -s \
+          api_response=$(curl -H 'Cache-Control: no-cache, no-store' \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s \
             https://api.github.com/repos/hapifhir/hapi-fhir/releases/latest)
           upstream_version=$(echo "$api_response" | jq -r '.tag_name' | sed 's/v//g')
           if [[ -z "$upstream_version" || "$upstream_version" == "null" ]]; then
