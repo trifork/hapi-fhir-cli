@@ -63,7 +63,7 @@ jobs:
           api_response=$(curl -H 'Cache-Control: no-cache, no-store' \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s \
             https://api.github.com/repos/hapifhir/hapi-fhir/releases/latest)
-          upstream_version=$(echo "$api_response" | jq -r '.tag_name' | sed 's/v//g')
+          upstream_version=$(echo "$api_response" | jq -r '.tag_name | sub("^v"; "")')
           if [[ -z "$upstream_version" || "$upstream_version" == "null" ]]; then
             echo "Failed to get upstream version. API response:"
             echo "$api_response"
