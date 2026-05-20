@@ -61,15 +61,18 @@ jobs:
         id: upstream
         run: |
           api_response=$(curl -H 'Cache-Control: no-cache, no-store' \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s \
-            https://api.github.com/repos/hapifhir/hapi-fhir/releases/latest)
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -sS \
+            https://api.github.com/repos/hapifhir/hapi-fhir/releases/latest) || {
+            echo "curl failed with exit code $?"
+            exit 1
+          }
           upstream_version=$(echo "$api_response" | jq -r '.tag_name | sub("^v"; "")')
           if [[ -z "$upstream_version" || "$upstream_version" == "null" ]]; then
             echo "Failed to get upstream version. API response:"
             echo "$api_response"
             exit 1
           fi
-          echo "upstream_version=$upstream_version" >> $GITHUB_OUTPUT
+          echo "upstream_version=$upstream_version" >> "$GITHUB_OUTPUT"
           echo "Found upstream release: \"$upstream_version\""
 
         # https://git-scm.com/docs/git-tag#Documentation/git-tag.txt---sortltkeygt
