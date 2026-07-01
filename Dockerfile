@@ -14,7 +14,9 @@ RUN  apk --no-cache add curl \
 
 # LTS versions: https://www.oracle.com/java/technologies/java-se-support-roadmap.html
 # https://github.com/GoogleContainerTools/distroless
-FROM gcr.io/distroless/java21-debian13:nonroot AS default
+# Pinned by digest for reproducible builds; the tag is kept for readability.
+# Dependabot (docker ecosystem) bumps the digest so security patches still flow in.
+FROM gcr.io/distroless/java21-debian13:nonroot@sha256:e9a57bd6aed8e63e07f01349de5232a57f72d3f2f9409943a763ee50cbb119c1 AS default
 
 COPY --from=build hapi-fhir-cli.jar /app/app.jar
 
